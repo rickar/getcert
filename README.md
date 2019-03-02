@@ -1,6 +1,6 @@
 # getcert
 
-A utility for retreiving server certificates from a web server or direct tcp 
+A utility for retrieving server certificates from a web server or direct tcp 
 connection.
 
 This is useful for getting copies of certificates to add to trust stores.
