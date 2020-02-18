@@ -147,6 +147,7 @@ func connectHTTPS() (tls.ConnectionState, io.Closer) {
 		DisableKeepAlives:     true,
 		ResponseHeaderTimeout: timeout,
 		ExpectContinueTimeout: timeout,
+		Proxy:                 http.ProxyFromEnvironment,
 	}
 	http.DefaultTransport = t
 
