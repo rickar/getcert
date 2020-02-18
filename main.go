@@ -18,16 +18,19 @@ import (
 )
 
 var (
-	fType    = flag.String("type", "https", "connection `protocol` to use (\"https\" or direct \"tcp\")")
-	fHost    = flag.String("host", "", "`host` to use when making direct TCP connection")
-	fPort    = flag.Int("port", 443, "`port` to use when making a direct TCP connection")
-	fURL     = flag.String("url", "", "`url` to use when retrieving https certificate")
-	fProxy   = flag.String("proxy", "", "proxy server `url` to use when retreiving https certificate")
-	fVerify  = flag.Bool("verify", true, "verify certificates")
-	fChain   = flag.Bool("chain", false, "output entire trust chain")
-	fName    = flag.String("out", "", "output `filename`")
-	fFormat  = flag.String("format", "pem", "output file `type` (\"pem\" or \"der\")")
-	fTimeout = flag.String("timeout", "60s", "connection timeout `duration`")
+	fType       = flag.String("type", "https", "connection `protocol` to use (\"https\" or direct \"tcp\")")
+	fHost       = flag.String("host", "", "`host` to use when making direct TCP connection")
+	fPort       = flag.Int("port", 443, "`port` to use when making a direct TCP connection")
+	fURL        = flag.String("url", "", "`url` to use when retrieving https certificate")
+	fProxy      = flag.String("proxy", "", "proxy server `url` to use when retreiving https certificate")
+	fVerify     = flag.Bool("verify", true, "verify certificates")
+	fChain      = flag.Bool("chain", false, "output entire trust chain")
+	fName       = flag.String("out", "", "output `filename`")
+	fFormat     = flag.String("format", "pem", "output file `type` (\"pem\" or \"der\")")
+	fTimeout    = flag.String("timeout", "60s", "connection timeout `duration`")
+	fClientCert = flag.String("clientCert", "", "client certificate `file` (pem format)")
+	fClientKey  = flag.String("clientKey", "", "client private key `file` (pem format)")
+	fMethod     = flag.String("method", "HEAD", "HTTP method (GET, HEAD, OPTIONS, etc.) to use with url")
 
 	timeout  time.Duration
 	proxyURL *url.URL
@@ -121,6 +124,11 @@ func validateFlags() {
 		hasErr = true
 	}
 
+	if (*fClientCert != "" && *fClientKey == "") || (*fClientKey != "" && *fClientKey == "") {
+		fmt.Println("-clientCert and -clientKey must both be specified")
+		hasErr = true
+	}
+
 	if hasErr {
 		flag.Usage()
 		os.Exit(1)
@@ -159,7 +167,26 @@ func connectHTTPS() (tls.ConnectionState, io.Closer) {
 		t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	resp, err := http.Head(*fURL)
+	if *fClientCert != "" {
+		cert, err := tls.LoadX509KeyPair(*fClientCert, *fClientKey)
+		if err != nil {
+			fmt.Printf("failed to read client certificate/key: %s\n", err.Error())
+			os.Exit(2)
+		}
+		conf := t.TLSClientConfig
+		if conf == nil {
+			conf = &tls.Config{}
+			t.TLSClientConfig = conf
+		}
+		conf.Certificates = []tls.Certificate{cert}
+	}
+
+	req, err := http.NewRequest(*fMethod, *fURL, nil)
+	if err != nil {
+		fmt.Printf("failed to create https request: %s\n", err.Error())
+		os.Exit(2)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Printf("failed to retreive cert using https: %s\n", err.Error())
 		os.Exit(2)
@@ -176,7 +203,7 @@ func connectHTTPS() (tls.ConnectionState, io.Closer) {
 // write copies the contents of a certificate to an output file. If the file
 // already exists, it will not be overwritten.
 func write(filename string, cert *x509.Certificate) {
-	fmt.Printf("Subject: %s\n", cert.Subject.String())
+	fmt.Printf("Subject: %s\n\tdestination: %s\n", cert.Subject.String(), filename)
 
 	out, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
 	if err != nil {
