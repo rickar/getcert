@@ -16,25 +16,35 @@ Run `getcert -help` to display command line options. They are reproduced below:
 
 ```
   -chain
-        output entire trust chain
+    	output entire trust chain
+  -clientCert file
+    	client certificate file (pem format)
+  -clientKey file
+    	client private key file (pem format)
+  -dir path
+    	output cert(s) to path directory using subject CN for filename
   -format type
-        output file type ("pem" or "der") (default "pem")
+    	output file type ("pem" or "der") (default "pem")
   -host host
-        host to use when making direct TCP connection
+    	host to use when making direct TCP connection
+  -interactive
+    	interactive mode
+  -method string
+    	HTTP method (GET, HEAD, OPTIONS, etc.) to use with url (default "HEAD")
   -out filename
-        output filename
+    	output filename
   -port port
-        port to use when making a direct TCP connection (default 443)
+    	port to use when making a direct TCP connection (default 443)
   -proxy url
-        proxy server url to use when retreiving https certificate
+    	proxy server url to use when retreiving https certificate
   -timeout duration
-        connection timeout duration (default "60s")
+    	connection timeout duration (default "60s")
   -type protocol
-        connection protocol to use ("https" or direct "tcp") (default "https")
+    	connection protocol to use ("https" or direct "tcp") (default "https")
   -url url
-        url to use when retrieving https certificate
+    	url to use when retrieving https certificate
   -verify
-        verify certificates (default true)
+    	verify certificates (default true)
 ```
 
 HTTPS usage requires `-url` and `-out` parameters. Direct TCP usage requires `-host`, `-port`, and `-out` parameters.
